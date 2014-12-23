@@ -26,25 +26,12 @@
 #ifndef OSCDATA_h
 #define OSCDATA_h
 
-#include "Arduino.h"
-
 #include <stdlib.h> 
 #include <stdint.h>
 #include <inttypes.h>
 #include <string.h>
 
 #include "OSCTiming.h"
-
-#if (defined(CORE_TEENSY) && defined(USB_SERIAL)) || (!defined(CORE_TEENSY) && defined(__AVR_ATmega32U4__)) || defined(__SAM3X8E__) || (defined(_USB) && defined(_USE_USB_FOR_SERIAL_)) || defined(BOARD_maple_mini)
-
-#define BOARD_HAS_USB_SERIAL
-#if defined(__SAM3X8E__)
-#define thisBoardsSerialUSB SerialUSB
-#else
-#define thisBoardsSerialUSB Serial
-#endif
-#endif
-
 
 
 //ERRORS/////////////////////////////////////////////////

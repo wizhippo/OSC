@@ -10,7 +10,6 @@
 #define ____OSCTiming__
 
 
-#include "Arduino.h"
 #include <stdlib.h>
 #include <stdint.h>
 #include <inttypes.h>
