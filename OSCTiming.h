@@ -18,9 +18,5 @@ typedef struct {
 } osctime_t;
 
 osctime_t oscTime();
-int adcRead(int pin, osctime_t *t);
-int capacitanceRead(int pin, osctime_t *t);
-
-int inputRead(int pin, uint64_t *t);
 
 #endif /* defined(____OSCTiming__) */
