@@ -75,15 +75,15 @@ public:
 
 	//overload the constructor to account for all the types and sizes
 	OSCData(const char * s);
-	OSCData (int);
 	OSCData (int32_t);
+    OSCData (int);
+    OSCData (unsigned int);
 	OSCData (float);
 	OSCData (double);
 	OSCData (uint8_t *, int);
     //accepts another OSCData objects and clones it
 	OSCData (OSCData *);
-    OSCData  (bool);
-    //    OSCData  (uint64_t);
+    OSCData  (boolean);
     OSCData  (osctime_t);
 
 	//destructor
