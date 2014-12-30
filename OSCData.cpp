@@ -28,26 +28,20 @@ OSCData::OSCData(int32_t i) {
 	bytes = 4;
 	data.i = i;
 }
+
 OSCData::OSCData(int i) {
 	error = OSC_OK;
 	type = 'i';
 	bytes = 4;
 	data.i = i;
 }
+
 OSCData::OSCData(unsigned int i) {
 	error = OSC_OK;
 	type = 'i';
 	bytes = 4;
 	data.i = i;
 }
-#if defined(__SAM3X8E__)
-OSCData::OSCData(int16_t i) {
-	error = OSC_OK;
-	type = 'i';
-	bytes = 4;
-	data.i = i;
-}
-#endif
 
 OSCData::OSCData(float f) {
 	error = OSC_OK;
@@ -62,6 +56,7 @@ OSCData::OSCData(osctime_t t) {
 	bytes = 8;
 	data.time = t;
 }
+
 OSCData::OSCData(boolean b) {
 	error = OSC_OK;
 	type = b ? 'T' : 'F';
@@ -162,6 +157,7 @@ int32_t OSCData::getInt() {
 		return NULL;
 	}
 }
+
 osctime_t OSCData::getTime() {
 	if (type == 't') {
 		return data.time;
@@ -170,6 +166,7 @@ osctime_t OSCData::getTime() {
 		return zerotime;
 	}
 }
+
 float OSCData::getFloat() {
 	if (type == 'f') {
 		return data.f;
@@ -185,6 +182,7 @@ double OSCData::getDouble() {
 		return NULL;
 	}
 }
+
 bool OSCData::getBoolean() {
 	if (type == 'T') {
 		return true;
