@@ -33,6 +33,7 @@
 
 #include "OSCTiming.h"
 
+typedef uint8_t boolean;
 
 //ERRORS/////////////////////////////////////////////////
 typedef enum { OSC_OK = 0,
