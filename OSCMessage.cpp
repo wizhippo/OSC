@@ -127,10 +127,10 @@ int32_t OSCMessage::getInt(int position) {
 	OSCData * datum = getOSCData(position);
 	if (!hasError()) {
 		return datum->getInt();
-	} else {
-		return NULL;
 	}
+	return 0;
 }
+
 osctime_t OSCMessage::getTime(int position) {
 	OSCData * datum = getOSCData(position);
 	if (!hasError()) {
@@ -139,30 +139,29 @@ osctime_t OSCMessage::getTime(int position) {
 		return zerotime;
 	}
 }
+
 float OSCMessage::getFloat(int position) {
 	OSCData * datum = getOSCData(position);
 	if (!hasError()) {
 		return datum->getFloat();
-	} else {
-		return NULL;
 	}
+	return 0;
 }
 
 double OSCMessage::getDouble(int position) {
 	OSCData * datum = getOSCData(position);
 	if (!hasError()) {
 		return datum->getDouble();
-	} else {
-		return NULL;
 	}
+	return 0;
 }
+
 bool OSCMessage::getBoolean(int position) {
 	OSCData * datum = getOSCData(position);
 	if (!hasError()) {
 		return datum->getBoolean();
-	} else {
-		return NULL;
 	}
+	return false;
 }
 
 int OSCMessage::getString(int position, char * buffer, int bufferSize) {
@@ -171,9 +170,8 @@ int OSCMessage::getString(int position, char * buffer, int bufferSize) {
 		//the number of bytes to copy is the smaller between the buffer size and the datum's byte length
 		int copyBytes = bufferSize < datum->bytes ? bufferSize : datum->bytes;
 		return datum->getString(buffer, copyBytes);
-	} else {
-		return NULL;
 	}
+	return 0;
 }
 
 int OSCMessage::getBlob(int position, uint8_t * buffer, int bufferSize) {
@@ -182,27 +180,24 @@ int OSCMessage::getBlob(int position, uint8_t * buffer, int bufferSize) {
 		//the number of bytes to copy is the smaller between the buffer size and the datum's byte length
 		int copyBytes = bufferSize < datum->bytes ? bufferSize : datum->bytes;
 		return datum->getBlob(buffer, copyBytes);
-	} else {
-		return NULL;
 	}
+	return 0;
 }
 
 char OSCMessage::getType(int position) {
 	OSCData * datum = getOSCData(position);
 	if (!hasError()) {
 		return datum->type;
-	} else {
-		return NULL;
 	}
+	return 0;
 }
 
 int OSCMessage::getDataLength(int position) {
 	OSCData * datum = getOSCData(position);
 	if (!hasError()) {
 		return datum->bytes;
-	} else {
-		return 0;
 	}
+	return 0;
 }
 
 /*=============================================================================
@@ -579,7 +574,7 @@ void OSCMessage::decodeData(uint8_t incomingByte) {
 					} u;
 					memcpy(u.b, incomingBuffer, 4);
 					uint32_t blobLength = BigEndian(u.i);
-					if (incomingBufferSize == blobLength + 4) {
+					if (incomingBufferSize == (int) blobLength + 4) {
 						set(i, incomingBuffer + 4, blobLength);
 						clearIncomingBuffer();
 						decodeState = DATA_PADDING;
@@ -628,39 +623,41 @@ void OSCMessage::decode(uint8_t incomingByte) {
 			decodeState = TYPES_PADDING;
 		}
 		//FALL THROUGH to test if it should go to the data state
+		/* no break */
 	case TYPES_PADDING: {
-		//compute the padding size for the types
-		//to determine the start of the data section
-		int typePad = padSize(dataCount + 1); // 1 is the comma
-		if (typePad == 0) {
-			typePad = 4;     // to make sure it will be null terminated
+			//compute the padding size for the types
+			//to determine the start of the data section
+			int typePad = padSize(dataCount + 1); // 1 is the comma
+			if (typePad == 0) {
+				typePad = 4;     // to make sure it will be null terminated
+			}
+			if (incomingBufferSize == (typePad + dataCount)) {
+				clearIncomingBuffer();
+				decodeState = DATA;
+			}
 		}
-		if (incomingBufferSize == (typePad + dataCount)) {
-			clearIncomingBuffer();
-			decodeState = DATA;
-		}
-	}
 		break;
 	case DATA:
 		decodeData(incomingByte);
 		break;
 	case DATA_PADDING: {
-		//get the last valid data
-		for (int i = dataCount - 1; i >= 0; i--) {
-			OSCData * datum = getOSCData(i);
-			if (datum->error == OSC_OK) {
-				//compute the padding size for the data
-				int dataPad = padSize(datum->bytes);
-				if (incomingBufferSize == dataPad) {
-					clearIncomingBuffer();
-					decodeState = DATA;
+			//get the last valid data
+			for (int i = dataCount - 1; i >= 0; i--) {
+				OSCData * datum = getOSCData(i);
+				if (datum->error == OSC_OK) {
+					//compute the padding size for the data
+					int dataPad = padSize(datum->bytes);
+					if (incomingBufferSize == dataPad) {
+						clearIncomingBuffer();
+						decodeState = DATA;
+					}
+					break;
 				}
-				break;
 			}
 		}
-	}
 		break;
-
+	default:
+		break;
 	}
 }
 
