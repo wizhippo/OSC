@@ -11,14 +11,11 @@
 #include <inttypes.h>
 #include <stdio.h>
 
-class Print
-{
-  public:
-    virtual void write(uint8_t) = 0;
-    virtual void write(const char *str);
-    virtual void write(const uint8_t *buffer, size_t size);
+class Print {
+public:
+	virtual void write(uint8_t) = 0;
+	virtual void write(const char *str);
+	virtual void write(const uint8_t *buffer, size_t size);
 };
-
-
 
 #endif /* LIB_OSC_OSCPRINT_H_ */

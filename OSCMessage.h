@@ -29,19 +29,16 @@
 #include "OSCData.h"
 #include "OSCPrint.h"
 
+class OSCMessage {
 
-class OSCMessage
-{
-	
 private:
-    
-    //friends
+
+	//friends
 	friend class OSCBundle;
 
-
-/*=============================================================================
-	PRIVATE VARIABLES
-=============================================================================*/
+	/*=============================================================================
+	 PRIVATE VARIABLES
+	 =============================================================================*/
 
 	//the address
 	char * address;
@@ -54,42 +51,42 @@ private:
 
 	//error codes for potential runtime problems
 	OSCErrorCode error;
-    
-/*=============================================================================
-    DECODING INCOMING BYTES
- =============================================================================*/
-    
-    //the decoding states for incoming bytes
-    enum DecodeState {
-        STANDBY,
-        ADDRESS,
-        ADDRESS_PADDING,
-        TYPES,
-        TYPES_PADDING,
-        DATA,
-        DATA_PADDING,
-        DONE,
-    } decodeState;
-    
-    //stores incoming bytes until they can be decoded
-    uint8_t * incomingBuffer;
-    int incomingBufferSize; // how many bytes are stored
-    int incomingBufferFree; // how many bytes are allocated but unused
-    
-    //adds a byte to the buffer
-    void addToIncomingBuffer(uint8_t);
-    //clears the incoming buffer
-    void clearIncomingBuffer();
-    
-    //decoding function
-    void decode(uint8_t);
-    void decodeAddress();
-    void decodeType(uint8_t);
-    void decodeData(uint8_t);
 
-/*=============================================================================
-	HELPER FUNCTIONS
-=============================================================================*/
+	/*=============================================================================
+	 DECODING INCOMING BYTES
+	 =============================================================================*/
+
+	//the decoding states for incoming bytes
+	enum DecodeState {
+		STANDBY,
+		ADDRESS,
+		ADDRESS_PADDING,
+		TYPES,
+		TYPES_PADDING,
+		DATA,
+		DATA_PADDING,
+		DONE,
+	} decodeState;
+
+	//stores incoming bytes until they can be decoded
+	uint8_t * incomingBuffer;
+	int incomingBufferSize; // how many bytes are stored
+	int incomingBufferFree; // how many bytes are allocated but unused
+
+	//adds a byte to the buffer
+	void addToIncomingBuffer(uint8_t);
+	//clears the incoming buffer
+	void clearIncomingBuffer();
+
+	//decoding function
+	void decode(uint8_t);
+	void decodeAddress();
+	void decodeType(uint8_t);
+	void decodeData(uint8_t);
+
+	/*=============================================================================
+	 HELPER FUNCTIONS
+	 =============================================================================*/
 
 	void setupMessage();
 
@@ -97,27 +94,27 @@ private:
 	bool testType(int position, char type);
 
 	//returns the number of bytes to pad to make it 4-bit aligned
-    //	int padSize(int bytes);
-    
+	//	int padSize(int bytes);
+
 public:
 
 	//returns the OSCData at that position
 	OSCData * getOSCData(int);
 
-/*=============================================================================
-	CONSTRUCTORS / DESTRUCTOR
-=============================================================================*/
-	
+	/*=============================================================================
+	 CONSTRUCTORS / DESTRUCTOR
+	 =============================================================================*/
+
 	//new constructor needs an address
-	OSCMessage (const char * _address);
-    //no address
-    //placeholder since it's invalide OSC
+	OSCMessage(const char * _address);
+	//no address
+	//placeholder since it's invalide OSC
 	OSCMessage();
-    
+
 	//can optionally accept all of the data after the address
 	//OSCMessage(const char * _address, char * types, ... );
-    //created from another OSCMessage
-    OSCMessage (OSCMessage *);
+	//created from another OSCMessage
+	OSCMessage(OSCMessage *);
 
 	//DESTRUCTOR
 	~OSCMessage();
@@ -125,22 +122,23 @@ public:
 	//empties all of the data
 	void empty();
 
-/*=============================================================================
-	SETTING  DATA
-=============================================================================*/
+	/*=============================================================================
+	 SETTING  DATA
+	 =============================================================================*/
 
 	//returns the OSCMessage so that multiple 'add's can be strung together
-	template <typename T> 
-	OSCMessage& add(T datum){
+	template<typename T>
+	OSCMessage& add(T datum) {
 		//make a piece of data
 		OSCData * d = new OSCData(datum);
 		//check if it has any errors
-		if (d->error == ALLOCFAILED){
+		if (d->error == ALLOCFAILED) {
 			error = ALLOCFAILED;
 		} else {
 			//resize the data array
-			OSCData ** dataMem = (OSCData **) realloc(data, sizeof(OSCData *) * (dataCount + 1));
-			if (dataMem == NULL){
+			OSCData ** dataMem = (OSCData **) realloc(data,
+					sizeof(OSCData *) * (dataCount + 1));
+			if (dataMem == NULL) {
 				error = ALLOCFAILED;
 			} else {
 				data = dataMem;
@@ -152,18 +150,19 @@ public:
 		}
 		return *this;
 	}
-    
-    //blob specific add
-    OSCMessage& add(uint8_t * blob, int length){
+
+	//blob specific add
+	OSCMessage& add(uint8_t * blob, int length) {
 		//make a piece of data
 		OSCData * d = new OSCData(blob, length);
 		//check if it has any errors
-		if (d->error == ALLOCFAILED){
+		if (d->error == ALLOCFAILED) {
 			error = ALLOCFAILED;
 		} else {
 			//resize the data array
-			OSCData ** dataMem = (OSCData **) realloc(data, sizeof(OSCData *) * (dataCount + 1));
-			if (dataMem == NULL){
+			OSCData ** dataMem = (OSCData **) realloc(data,
+					sizeof(OSCData *) * (dataCount + 1));
+			if (dataMem == NULL) {
 				error = ALLOCFAILED;
 			} else {
 				data = dataMem;
@@ -177,9 +176,9 @@ public:
 	}
 
 	//sets the data at a position
-	template <typename T> 
-	void set(int position, T datum){
-		if (position < dataCount){
+	template<typename T>
+	void set(int position, T datum) {
+		if (position < dataCount) {
 			//replace the OSCData with a new one
 			OSCData * oldDatum = getOSCData(position);
 			//destroy the old one
@@ -187,13 +186,13 @@ public:
 			//make a new one
 			OSCData * newDatum = new OSCData(datum);
 			//test if there was an error
-			if (newDatum->error == ALLOCFAILED){
+			if (newDatum->error == ALLOCFAILED) {
 				error = ALLOCFAILED;
 			} else {
 				//otherwise, put it in the data array
 				data[position] = newDatum;
 			}
-		} else if (position == (dataCount)){
+		} else if (position == (dataCount)) {
 			//add the data to the end
 			add(datum);
 		} else {
@@ -201,10 +200,10 @@ public:
 			error = INDEX_OUT_OF_BOUNDS;
 		}
 	}
-    
-    //blob specific setter
-    void set(int position, uint8_t * blob, int length){
-        if (position < dataCount){
+
+	//blob specific setter
+	void set(int position, uint8_t * blob, int length) {
+		if (position < dataCount) {
 			//replace the OSCData with a new one
 			OSCData * oldDatum = getOSCData(position);
 			//destroy the old one
@@ -212,35 +211,35 @@ public:
 			//make a new one
 			OSCData * newDatum = new OSCData(blob, length);
 			//test if there was an error
-			if (newDatum->error == ALLOCFAILED){
+			if (newDatum->error == ALLOCFAILED) {
 				error = ALLOCFAILED;
 			} else {
 				//otherwise, put it in the data array
 				data[position] = newDatum;
 			}
-		} else if (position == (dataCount)){
+		} else if (position == (dataCount)) {
 			//add the data to the end
 			add(blob, length);
 		} else {
 			//else out of bounds error
 			error = INDEX_OUT_OF_BOUNDS;
 		}
-    }
-    
-    void setAddress(const char *);
+	}
 
-/*=============================================================================
-	GETTING DATA
+	void setAddress(const char *);
 
-	getters take a position as an argument
-=============================================================================*/
+	/*=============================================================================
+	 GETTING DATA
+
+	 getters take a position as an argument
+	 =============================================================================*/
 
 	int32_t getInt(int);
-    osctime_t getTime(int);
+	osctime_t getTime(int);
 
 	float getFloat(int);
 	double getDouble(int);
-    bool getBoolean(int);
+	bool getBoolean(int);
 
 	//return the copied string's length
 	int getString(int, char *, int);
@@ -256,15 +255,14 @@ public:
 	//put the address in the buffer
 	int getAddress(char * buffer, int offset = 0);
 	int getAddress(char * buffer, int offset, int len);
-	
+
 	// TODO: int getAddressLength(int offset = 0);
-	
 
-/*=============================================================================
-	TESTING DATA
+	/*=============================================================================
+	 TESTING DATA
 
-	testers take a position as an argument
-=============================================================================*/
+	 testers take a position as an argument
+	 =============================================================================*/
 
 	bool isInt(int);
 	bool isFloat(int);
@@ -272,54 +270,53 @@ public:
 	bool isChar(int);
 	bool isString(int);
 	bool isDouble(int);
-    bool isBoolean(int);
-    bool isTime(int);
-		
-/*=============================================================================
-	PATTERN MATCHING
-=============================================================================*/
-	
+	bool isBoolean(int);
+	bool isTime(int);
+
+	/*=============================================================================
+	 PATTERN MATCHING
+	 =============================================================================*/
+
 	//match the pattern against the address
 	//returns true only for a complete match
-	bool fullMatch( const char * pattern, int = 0);
-	
+	bool fullMatch(const char * pattern, int = 0);
+
 	//returns the number of characters matched in the address
-	int match( const char * pattern, int = 0);
-	
+	int match(const char * pattern, int = 0);
+
 	//calls the function with the message as the arg if it was a full match
 	bool dispatch(const char * pattern, void (*callback)(OSCMessage &), int = 0);
-	
+
 	//like dispatch, but allows for partial matches
 	//the address match offset is sent as an argument to the callback
 	//also room for an option address offset to allow for multiple nested routes
-	bool route(const char * pattern, void (*callback)(OSCMessage &, int), int = 0);
-	
+	bool route(const char * pattern, void (*callback)(OSCMessage &, int),
+			int = 0);
 
+	/*=============================================================================
+	 SIZE
+	 =============================================================================*/
 
-/*=============================================================================
-	SIZE
-=============================================================================*/
-	
 	//the number of data that the message contains
 	int size();
-	
+
 	//computes the number of bytes the OSCMessage occupies if everything is 32-bit aligned
 	int bytes();
-    
-/*=============================================================================
-    TRANSMISSION
- =============================================================================*/
-    
-    //send the message
-    void send(Print &p);
-    
-    //fill the message from a byte stream
-    void fill(uint8_t);
-    void fill(uint8_t *, int);
-		
-/*=============================================================================
-	ERROR
-=============================================================================*/
+
+	/*=============================================================================
+	 TRANSMISSION
+	 =============================================================================*/
+
+	//send the message
+	void send(Print &p);
+
+	//fill the message from a byte stream
+	void fill(uint8_t);
+	void fill(uint8_t *, int);
+
+	/*=============================================================================
+	 ERROR
+	 =============================================================================*/
 
 	bool hasError();
 

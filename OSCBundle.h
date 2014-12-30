@@ -29,145 +29,139 @@
 #include "OSCMessage.h"
 
 extern osctime_t zerotime;
-class OSCBundle
-{
+class OSCBundle {
 
 private:
 
-/*=============================================================================
-	PRIVATE VARIABLES
-=============================================================================*/
+	/*=============================================================================
+	 PRIVATE VARIABLES
+	 =============================================================================*/
 
 	//the array of messages contained in the bundle
 	OSCMessage ** messages;
 
 	//the number of messages in the array
 	int numMessages;
-    
-    osctime_t timetag;
-    
-    //error codes
-    OSCErrorCode error;
-    
-/*=============================================================================
- DECODING INCOMING BYTES
- =============================================================================*/
-    
-    //the decoding states for incoming bytes
-    enum DecodeState {
-        STANDBY,
-        HEADER,
-        TIMETAG,
-        MESSAGE_SIZE,
-        MESSAGE,
-    } decodeState;
-    
-    //stores incoming bytes until they can be decoded
-    uint8_t * incomingBuffer;
-    int incomingBufferSize;
-    
-    //the size of the incoming message
-    int incomingMessageSize;
-    
-    //adds a byte to the buffer
-    void addToIncomingBuffer(uint8_t);
-    //clears the incoming buffer
-    void clearIncomingBuffer();
-    
-    //decoding functions
-    void decode(uint8_t);
-    void decodeTimetag();
-    void decodeHeader();
-    void decodeMessage(uint8_t);
-    
-    //just a placeholder while filling
-    OSCMessage & add();
 
+	osctime_t timetag;
+
+	//error codes
+	OSCErrorCode error;
+
+	/*=============================================================================
+	 DECODING INCOMING BYTES
+	 =============================================================================*/
+
+	//the decoding states for incoming bytes
+	enum DecodeState {
+		STANDBY, HEADER, TIMETAG, MESSAGE_SIZE, MESSAGE,
+	} decodeState;
+
+	//stores incoming bytes until they can be decoded
+	uint8_t * incomingBuffer;
+	int incomingBufferSize;
+
+	//the size of the incoming message
+	int incomingMessageSize;
+
+	//adds a byte to the buffer
+	void addToIncomingBuffer(uint8_t);
+	//clears the incoming buffer
+	void clearIncomingBuffer();
+
+	//decoding functions
+	void decode(uint8_t);
+	void decodeTimetag();
+	void decodeHeader();
+	void decodeMessage(uint8_t);
+
+	//just a placeholder while filling
+	OSCMessage & add();
 
 public:
 
-/*=============================================================================
-	CONSTRUCTORS / DESTRUCTOR
-=============================================================================*/
-		
-    //default timetag of
-      	OSCBundle(osctime_t = zerotime);
+	/*=============================================================================
+	 CONSTRUCTORS / DESTRUCTOR
+	 =============================================================================*/
+
+	//default timetag of
+	OSCBundle(osctime_t = zerotime);
 
 	//DESTRUCTOR
 	~OSCBundle();
 
-    //clears all of the OSCMessages inside
-    void empty();
-	
-/*=============================================================================
-    SETTERS
-=============================================================================*/
-    
+	//clears all of the OSCMessages inside
+	void empty();
+
+	/*=============================================================================
+	 SETTERS
+	 =============================================================================*/
+
 	//start a new OSC Message in the bundle
-    OSCMessage & add( char * address);
-    //add with nothing in it produces an invalid osc message
+	OSCMessage & add(char * address);
+	//add with nothing in it produces an invalid osc message
 	//copies an existing message into the bundle
 	OSCMessage & add(OSCMessage & msg);
-    
-    template <typename T>
-    void setTimetag(T t){
-        timetag = (osctime_t) t;
-    }
-    //sets the timetag from a buffer
-    void setTimetag(uint8_t * buff){
-        memcpy(&timetag, buff, 8);
-    }
-    
-/*=============================================================================
-    GETTERS
- =============================================================================*/
 
-    //gets the message the matches the address string
+	template<typename T>
+	void setTimetag(T t) {
+		timetag = (osctime_t) t;
+	}
+	//sets the timetag from a buffer
+	void setTimetag(uint8_t * buff) {
+		memcpy(&timetag, buff, 8);
+	}
+
+	/*=============================================================================
+	 GETTERS
+	 =============================================================================*/
+
+	//gets the message the matches the address string
 	//will do regex matching
 	OSCMessage * getOSCMessage(char * addr);
-	
+
 	//get message by position
 	OSCMessage * getOSCMessage(int position);
-	
-/*=============================================================================
-    MATCHING
-=============================================================================*/
+
+	/*=============================================================================
+	 MATCHING
+	 =============================================================================*/
 
 	//if the bundle contains a message that matches the pattern, 
 	//call the function callback on that message
 	bool dispatch(const char * pattern, void (*callback)(OSCMessage&), int = 0);
-	
+
 	//like dispatch, but allows for partial matches
 	//the address match offset is sent as an argument to the callback
 	bool route(const char * pattern, void (*callback)(OSCMessage&, int), int = 0);
-	
-/*=============================================================================
-     SIZE
-=============================================================================*/
+
+	/*=============================================================================
+	 SIZE
+	 =============================================================================*/
 	//returns the number of messages in the bundle;
 	int size();
-    
-/*=============================================================================
-    ERROR
- =============================================================================*/
-    
+
+	/*=============================================================================
+	 ERROR
+	 =============================================================================*/
+
 	bool hasError();
-    
+
 	OSCErrorCode getError();
-    
-/*=============================================================================
-    SENDING
- =============================================================================*/
-    
-    void send(Print &p);
-    
-/*=============================================================================
-    FILLING
- =============================================================================*/
-    
-    void fill(uint8_t incomingByte);
-    
-    void fill(uint8_t * incomingBytes, int length);
+
+	/*=============================================================================
+	 SENDING
+	 =============================================================================*/
+
+	void send(Print &p);
+
+	/*=============================================================================
+	 FILLING
+	 =============================================================================*/
+
+	void fill(uint8_t incomingByte);
+
+	void fill(uint8_t * incomingBytes, int length);
 };
 
 #endif

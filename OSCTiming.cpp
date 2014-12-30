@@ -23,12 +23,11 @@
  For bug reports and feature requests please email me at yotam@cnmat.berkeley.edu
  */
 
-
 #include "OSCTiming.h"
 
 osctime_t oscTime() {
-	  osctime_t t;
-	  t.seconds = 0;
-	  t.fractionofseconds = 1;
-	  return t;
+	osctime_t t;
+	t.seconds = 0;
+	t.fractionofseconds = 1;
+	return t;
 }
