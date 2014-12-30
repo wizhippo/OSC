@@ -1,6 +1,7 @@
 #include "OSCData.h"
 
 osctime_t zerotime = { 0, 0 };
+
 /*=============================================================================
  CONSTRUCTORS
 
@@ -87,7 +88,6 @@ OSCData::OSCData(uint8_t * b, int len) {
 	uint8_t * lenPtr = (uint8_t *) (&len32);
 	//own the data
 	if (bytes > 0) {
-
 		uint8_t * mem = (uint8_t *) malloc(bytes);
 		if (mem == NULL) {
 			error = ALLOCFAILED;
@@ -153,59 +153,50 @@ OSCData::OSCData(char t) {
 int32_t OSCData::getInt() {
 	if (type == 'i') {
 		return data.i;
-	} else {
-		return NULL;
 	}
+	return 0;
 }
 
 osctime_t OSCData::getTime() {
 	if (type == 't') {
 		return data.time;
-	} else {
-
-		return zerotime;
 	}
+	return zerotime;
 }
 
 float OSCData::getFloat() {
 	if (type == 'f') {
 		return data.f;
-	} else {
-		return NULL;
 	}
+	return 0;
 }
 
 double OSCData::getDouble() {
 	if (type == 'd') {
 		return data.d;
-	} else {
-		return NULL;
 	}
+	return 0;
 }
 
 bool OSCData::getBoolean() {
 	if (type == 'T') {
 		return true;
-	} else if (type == 'F') {
-		return false;
-	} else
-		return NULL;
+	}
+	return false;
 }
 
 int OSCData::getString(char * strBuffer, int length) {
 	if (type == 's' && bytes <= length) {
 		strncpy(strBuffer, data.s, bytes);
 		return bytes;
-	} else {
-		return NULL;
 	}
+	return 0;
 }
 
 int OSCData::getBlob(uint8_t * blobBuffer, int length) {
 	if (type == 'b' && bytes <= length) {
 		memcpy(blobBuffer, data.b, bytes);
 		return bytes;
-	} else {
-		return NULL;
 	}
+	return 0;
 }
