@@ -1,14 +1,50 @@
 
+// UDP OSCuino
+// system, analog and digital pin control and monitoring for Arduino
+// Yotam Mann and Adrian Freed
+
+
+#include <Ethernet.h>  //<EthernetV1_0.h>
+#include <EthernetUdp.h> //<EthernetUdpV1_0.h>
+#include <SPI.h>    
 #include <OSCBundle.h>
 #include <OSCBoards.h>
 
-#ifdef BOARD_HAS_USB_SERIAL
-#include <SLIPEncodedUSBSerial.h>
-SLIPEncodedUSBSerial SLIPSerial( thisBoardsSerialUSB );
+EthernetUDP Udp;
+
+//the Arduino's IP
+IPAddress ip(128, 32, 122, 252);
+
+//port numbers
+const unsigned int inPort = 8888;
+const unsigned int outPort = 9999;
+
+//everything on the network needs a unique MAC 
+#if defined(__MK20DX128__) || defined(__MK20DX256__) || defined(__MKL26Z64__) 
+// Teensy 3 has MAC burned in
+static byte mac[6];
+void read(uint8_t word, uint8_t *mac, uint8_t offset) {
+  FTFL_FCCOB0 = 0x41;             // Selects the READONCE command
+  FTFL_FCCOB1 = word;             // read the given word of read once area
+
+  // launch command and wait until complete
+  FTFL_FSTAT = FTFL_FSTAT_CCIF;
+  while(!(FTFL_FSTAT & FTFL_FSTAT_CCIF));
+
+  *(mac+offset) =   FTFL_FCCOB5;       // collect only the top three bytes,
+  *(mac+offset+1) = FTFL_FCCOB6;       // in the right orientation (big endian).
+  *(mac+offset+2) = FTFL_FCCOB7;       // Skip FTFL_FCCOB4 as it's always 0.
+}
+void read_mac() {
+  read(0xe,mac,0);
+  read(0xf,mac,3);
+}
 #else
-#include <SLIPEncodedSerial.h>
- SLIPEncodedSerial SLIPSerial(Serial);
+void read_mac() {}
+ byte mac[] = {  
+  0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED }; // you can find this written on the board of some Arduino Ethernets or shields
 #endif
+
 
 //outgoing messages
 
@@ -60,10 +96,11 @@ void routeDigital(OSCMessage &msg, int addrOffset ){
       if (msg.isInt(0)){
         pinMode(pin, OUTPUT);
         digitalWrite(pin, (msg.getInt(0)>0) ? HIGH:LOW);
-       } 
+      }      //otherwise it's an analog read
       else if(msg.isFloat(0)){
         analogWrite(pin, (int)(msg.getFloat(0)*255.0f));
       }
+
      
       //otherwise it's an digital read
       //with a pullup?
@@ -116,7 +153,7 @@ void routeAnalog(OSCMessage &msg, int addrOffset ){
       if (msg.isInt(0)){
         pinMode(analogInputToDigitalPin(pin), OUTPUT);
         digitalWrite(analogInputToDigitalPin(pin), (msg.getInt(0) > 0)? HIGH: LOW);
-      } 
+      } //otherwise it's an analog read
       else if(msg.isFloat(0)){
         analogWrite(pin, (int)(msg.getFloat(0)*255.0f));
       }
@@ -132,14 +169,13 @@ void routeAnalog(OSCMessage &msg, int addrOffset ){
         strcpy(outputAddress, "/a");
         strcat(outputAddress, numToOSCAddress(pin));
         strcat(outputAddress,"/u");
-       //do the analog read and send the results
-        bundleOUT.add(outputAddress).add((int32_t)analogRead(pin));       
-      } //else without a pullup 
+        strcat(outputAddress,"/u");
+        //do the analog read and send the results
+        bundleOUT.add(outputAddress).add((int32_t)analogRead(pin));
+      } //else without a pullup   
 #endif
-
       else {
-         //otherwise it's an analog read
-       //set the pinmode
+        //set the pinmode
 
         pinMode(analogInputToDigitalPin(pin), INPUT);
         //setup the output address which should be /a/(pin)
@@ -147,13 +183,14 @@ void routeAnalog(OSCMessage &msg, int addrOffset ){
         strcpy(outputAddress, "/a");
         strcat(outputAddress, numToOSCAddress(pin));
         //do the analog read and send the results
-        bundleOUT.add(outputAddress).add((int32_t)analogRead(pin));         
+        bundleOUT.add(outputAddress).add((int32_t)analogRead(pin));
       }
     }
   }
 }
 
 #ifdef BOARD_HAS_TONE
+
 /**
  * TONE
  * 
@@ -193,35 +230,30 @@ void routeTone(OSCMessage &msg, int addrOffset ){
     }
   }
 }
+
 #endif
 
-
-#ifdef  BOARD_HAS_CAPACITANCE_SENSING
-#if  defined(__MKL26Z64__) 
-#define NTPINS 11
-const int cpins[NTPINS] = {22,23,19,18,17,16,15,0,1,3,4 }; 
-#else
+#ifdef BOARD_HAS_CAPACITANCE_SENSING
 #define NTPINS 12
 const int cpins[NTPINS] = {22,23,19,18,17,16,15,0,1,25,32, 33 }; 
-#endif
-
 void routeTouch(OSCMessage &msg, int addrOffset )
 {
-    for(int i=0;i<NTPINS;++i)
+  for(int i=0;i<NTPINS;++i)
+   {
+const char *name = numToOSCAddress(cpins[i]);
+     int pinMatched = msg.match(name, addrOffset);
+    if(pinMatched)
     {
-        const char *name = numToOSCAddress(cpins[i]);
-        int pinMatched = msg.match(name, addrOffset);
-        if(pinMatched)
-        {
-           char outputAddress[9];
-            strcpy(outputAddress, "/c");
-            strcat(outputAddress, name);
-            bundleOUT.add(outputAddress).add(touchRead(cpins[i]));
+       char outputAddress[9];
+        strcpy(outputAddress, "/c");
+        strcat(outputAddress, name);
+        bundleOUT.add(outputAddress).add(touchRead(cpins[i]));
 
-        }
     }
+   }
 }
 #endif
+
 
 #ifdef BOARD_HAS_DIE_POWER_SUPPLY_MEASUREMENT
 #if defined(__MK20DX128__) || defined(__MK20DX256__) || defined(__MKL26Z64__) 
@@ -265,7 +297,7 @@ float getSupplyVoltage(){
 #ifdef BOARD_HAS_DIE_TEMPERATURE_SENSOR
 
 
-#if defined(__MK20DX128__) || defined(__MK20DX256__)|| defined(__MKL26Z64__) 
+#if defined(__MK20DX128__) || defined(__MK20DX256__) || defined(__MKL26Z64__) 
 float getTemperature()
 {
         analogReference(INTERNAL);
@@ -313,12 +345,13 @@ float getTemperature(){
  */
 // 
 void routeSystem(OSCMessage &msg, int addrOffset ){
+
 #ifdef BOARD_HAS_DIE_TEMPERATURE_SENSOR
   if (msg.fullMatch("/t", addrOffset)){
     bundleOUT.add("/s/t").add(getTemperature());
   }
 #endif 
-#ifdef BOARD_HAS_DIE_POWER_SUPPLY_MEASUREMENT
+#ifdef BOARD_HAS_DIE_POWER_SUPPLY_MEASUREMENT  
   if (msg.fullMatch("/s", addrOffset)){
     bundleOUT.add("/s/s").add(getSupplyVoltage());
   }
@@ -332,7 +365,13 @@ void routeSystem(OSCMessage &msg, int addrOffset ){
   if (msg.fullMatch("/a", addrOffset)){
     bundleOUT.add("/s/a").add(NUM_ANALOG_INPUTS);
   }
+  
+// this is disabled because many ethernet boards use the
+// LED pin for ethernet pin 13
+#if LED_BUILTIN!=13
+
   if (msg.fullMatch("/l", addrOffset)){
+
     if (msg.isInt(0)){
              pinMode(LED_BUILTIN, OUTPUT);
       int i = msg.getInt(0);
@@ -341,6 +380,7 @@ void routeSystem(OSCMessage &msg, int addrOffset ){
         bundleOUT.add("/s/l").add(i);
       }
   }
+#endif
 }
 
 /**
@@ -348,51 +388,48 @@ void routeSystem(OSCMessage &msg, int addrOffset ){
  * 
  * setup and loop, bundle receiving/sending, initial routing
  */
-
-
 void setup() {
-    SLIPSerial.begin(115200);   // set this as high as you can reliably run on your platform
-#if ARDUINO >= 100
-    while(!Serial)
-      ;   // Leonardo bug
-#endif
+  //setup ethernet port
+  read_mac();
+  Ethernet.begin(mac,ip);
+  Udp.begin(inPort);
 
 }
 
 //reads and routes the incoming messages
 void loop(){ 
-  OSCBundle bundleIN;
+    OSCBundle bundleIN;
    int size;
-
-    while(!SLIPSerial.endofPacket())
-     if ((size =SLIPSerial.available()) > 0)
-      {
-         while(size--)
-            bundleIN.fill(SLIPSerial.read());
-      }
-      
-    if(!bundleIN.hasError())
-    {
-      bundleIN.route("/s", routeSystem);
-      bundleIN.route("/a", routeAnalog);
-      bundleIN.route("/d", routeDigital);
-#ifdef BOARD_HAS_TONE
-      bundleIN.route("/tone", routeTone);
-#endif
-#ifdef    BOARD_HAS_CAPACITANCE_SENSING
-      bundleIN.route("/c", routeTouch);
-#endif
-    }
-    bundleIN.empty();
-
  
-//send the outgoing message
-  SLIPSerial.beginPacket();
-    bundleOUT.send(SLIPSerial);
-  SLIPSerial.endPacket();
-  bundleOUT.empty();
+   if( (size = Udp.parsePacket())>0)
+   {
+//       unsigned int outPort = Udp.remotePort();
 
+     while(size--)
+       bundleIN.fill(Udp.read());
+
+    if(!bundleIN.hasError())
+     {
+        bundleIN.route("/s", routeSystem);
+        bundleIN.route("/a", routeAnalog);
+        bundleIN.route("/d", routeDigital);
+#ifdef BOARD_HAS_TONE
+        bundleIN.route("/tone", routeTone);
+#endif
+
+#ifdef TOUCHSUPPORT
+        bundleIN.route("/c", routeTouch);
+#endif
+
+    }
+    // send the response bundle back to where the request came from
+    Udp.beginPacket(Udp.remoteIP(),outPort); 
+    bundleOUT.send(Udp);
+    Udp.endPacket();
+    bundleOUT.empty(); // empty the bundle ready to use for new messages
+   }
 }
+
 
 
 
